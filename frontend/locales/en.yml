@@ -1,0 +1,7 @@
+en:
+  reports:
+    parameters:
+      resource_uri: Limit to Resource (optional)
+    physical_carriers_report:
+      title: Physical Carriers
+      description: Report on Archival Objects with subjects indicating that they have physical carriers
