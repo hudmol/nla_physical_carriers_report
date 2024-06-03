@@ -1,35 +1,33 @@
 class PhysicalCarriersReport < AbstractReport
 
-  subjects = AppConfig[:nla_physical_carriers_report_subjects] rescue ['born digital', 'audio', 'moving images']
-
-  subject_params = subjects.map {|subject| [subject, 'Boolean', 'Subject: ' + subject, { optional: true }]}
-
-  repo_params = Repository.filter(Sequel.~(:repo_code => '_archivesspace'))
-    .select(:repo_code).map{|repo| [repo[:repo_code], 'Boolean', 'Repository: ' + repo[:repo_code], { optional: true }]}
-
+  # the param 'physical_carriers_form' is just a hook to write a partial with the actual form
   register_report({
                     :uri_suffix => "nla_physical_carriers",
                     :description => "Physical Carriers Report",
-                    :params => [
-                      ["resource_uri", "resource_linker", "Limit to Resource", { optional: true }]
-                    ] + subject_params + [[" ", "nonce", " ", { optional: true }]] + repo_params
+                    :params => [["", "physical_carriers_form", "", { optional: true }]]
                   })
 
   def initialize(params, job, db)
     super
-puts 'QQQQQQQQQ  ' + params.to_s
+
     if resource_uri = params['resource_uri']
       @resource_id = JSONModel.parse_reference(resource_uri)[:id]
+
+      resource_obj = Resource[@resource_id]
+
+      info[:'limited to resource'] = JSON.parse(resource_obj.identifier).compact.join('.') + ': ' + resource_obj.title
     end
 
-    # annoyingly the subject params aren't distinguished in any way
-    subject_params = params.select{|k,v| k != 'resource_uri' && k != :format && k != :repo_id && k != 'csv_show_json'}
+    subject_params = params.keys
+      .map{|k| k.to_s }
+      .select{|k| k.start_with?('subject-')}
+      .map{|k| k.delete_prefix('subject-')}
 
-    info[:subjects] = subject_params.keys.join(', ')
+    info[:subjects] = subject_params.join(', ')
 
     @subject_ids = []
 
-    subject_params.each do |subject, _|
+    subject_params.each do |subject|
       if subject_id = db[:subject].filter(:title => subject).get(:id)
         @subject_ids << subject_id
       else
@@ -40,6 +38,28 @@ puts 'QQQQQQQQQ  ' + params.to_s
     if @subject_ids.empty?
       raise "ERROR: No subjects found!"
     end
+
+    repo_params = params.keys
+      .map{|k| k.to_s }
+      .select{|k| k.start_with?('repo-')}
+      .map{|k| k.delete_prefix('repo-')}
+
+    info[:'searched repositories'] = repo_params.join(', ')
+
+    @repo_ids = []
+
+    repo_params.each do |repo|
+      if repo_id = db[:repository].filter(:repo_code => repo).get(:id)
+        @repo_ids << repo_id
+      else
+        job.write_output('WARNING: No repository found for "' + repo + '"')
+      end
+    end
+
+    if @repo_ids.empty?
+      raise "ERROR: No repositories selected!"
+    end
+
   end
 
   def title
@@ -47,12 +67,11 @@ puts 'QQQQQQQQQ  ' + params.to_s
   end
 
   def query
-    dataset = db[:archival_object]
+    dataset = db[:archival_object].filter(:archival_object__repo_id => @repo_ids)
 
     if @resource_id
       dataset = dataset.filter(:root_record_id => @resource_id)
     end
-
 
     dataset = dataset.inner_join(:subject_rlshp, :archival_object__id => :subject_rlshp__archival_object_id)
                      .filter(:subject_rlshp__subject_id => @subject_ids)
