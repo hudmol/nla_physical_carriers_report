@@ -39,22 +39,14 @@ class PhysicalCarriersReport < AbstractReport
       raise "ERROR: No subjects found!"
     end
 
-    repo_params = params.keys
+    @repo_ids = params.keys
       .map{|k| k.to_s }
       .select{|k| k.start_with?('repo-')}
       .map{|k| k.delete_prefix('repo-')}
 
-    info[:'searched repositories'] = repo_params.join(', ')
+    repo_codes = db[:repository].filter(:id => @repo_ids).select(:repo_code).map{|r| r[:repo_code]}
 
-    @repo_ids = []
-
-    repo_params.each do |repo|
-      if repo_id = db[:repository].filter(:repo_code => repo).get(:id)
-        @repo_ids << repo_id
-      else
-        job.write_output('WARNING: No repository found for "' + repo + '"')
-      end
-    end
+    info[:'searched repositories'] = repo_codes.join(', ')
 
     if @repo_ids.empty?
       raise "ERROR: No repositories selected!"

@@ -1,4 +1,10 @@
 
+<script>
+  $(function () {
+    $('#job_format_').children('option[value=json]').remove();
+  });
+</script>
+
 <%# faking a param to get control of the layout, so need to close the divs we enter with %>
 </div></div>
 
@@ -51,9 +57,11 @@
     </label>
 
     <div class="col-sm-7">
-      <input id="job_job_params_repo-<%= repo.repo_code %>_" type="checkbox" name="job[job_params][repo-<%= repo.repo_code %>]" checked="checked">
+      <input id="job_job_params_repo-<%= repo.id %>_" type="checkbox" name="job[job_params][repo-<%= repo.id %>]" checked="checked">
     </div>
   </div>
 <% end %>
 
 <hr/>
+
+<div><div>
