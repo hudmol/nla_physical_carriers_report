@@ -30,13 +30,12 @@
   <div class="form-group">
     <div class="col-sm-2"></div>
 
-    <label class="col-sm-2">
+    <label class="col-sm-9">
+      <input id="job_job_params_subject-<%= subject %>_" type="checkbox" name="job[job_params][subject-<%= subject %>]" checked="checked">
+      &nbsp;
       <%= subject %>
     </label>
 
-    <div class="col-sm-7">
-      <input id="job_job_params_subject-<%= subject %>_" type="checkbox" name="job[job_params][subject-<%= subject %>]" checked="checked">
-    </div>
   </div>
 <% end %>
 
@@ -52,13 +51,12 @@
   <div class="form-group">
     <div class="col-sm-2"></div>
 
-    <label class="col-sm-2">
+    <label class="col-sm-9">
+      <% checked = repo.repo_code == 'Special Collections (Manuscripts)' ? 'checked="checked"' : '' %>
+      <input id="job_job_params_repo-<%= repo.id %>_" type="checkbox" name="job[job_params][repo-<%= repo.id %>]" <%= checked %>>
+      &nbsp;
       <%= repo.repo_code %>
     </label>
-
-    <div class="col-sm-7">
-      <input id="job_job_params_repo-<%= repo.id %>_" type="checkbox" name="job[job_params][repo-<%= repo.id %>]" checked="checked">
-    </div>
   </div>
 <% end %>
 
